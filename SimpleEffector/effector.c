@@ -13,31 +13,30 @@
 static int finish = 0;
 static int finish_effector = 0;
 
+static int inbuf_l[FRAME_NUM];
+static int inbuf_r[FRAME_NUM];
+static int outbuf_l[FRAME_NUM];
+static int outbuf_r[FRAME_NUM];
+static int sma_buf_l[DELAY_NUM];
+static int sma_buf_r[DELAY_NUM];
+static int sma_sum_l;
+static int sma_sum_r;
+
 // エフェクタースレッド
 void* effector_thread()
 {
-    int inbuf_l[FRAME_NUM];
-    int inbuf_r[FRAME_NUM];
-    int *pinbuf[2] = {inbuf_l, inbuf_r};
-    int outbuf_l[FRAME_NUM];
-    int outbuf_r[FRAME_NUM];
-    int *poutbuf[2] = {outbuf_l, outbuf_r};
-    int sma_buf_l[DELAY_NUM];
-    int sma_buf_r[DELAY_NUM];
-    int sma_sum_l;
-    int sma_sum_r;
-    snd_pcm_t *h_in;
-    snd_pcm_t *h_out;
+    int *pinbuf[2], *poutbuf[2];
+    snd_pcm_t *inhandle, *outhandle;
     int i, j;
     int ret;
 
     // 入力を初期化する
-    ret = snd_pcm_open(&h_in, "default", SND_PCM_STREAM_CAPTURE, 0);
+    ret = snd_pcm_open(&inhandle, "default", SND_PCM_STREAM_CAPTURE, 0);
     if (ret < 0) {
         fprintf(stderr, "capture open error: %s\n", snd_strerror(ret));
         exit(1);
     }
-    ret = snd_pcm_set_params(h_in, SND_PCM_FORMAT_S32_LE,
+    ret = snd_pcm_set_params(inhandle, SND_PCM_FORMAT_S32_LE,
             SND_PCM_ACCESS_RW_NONINTERLEAVED, CH_NUM, SAMPLING_RATE, 1, 50000);
     if (ret < 0) {
         fprintf(stderr, "capture set error: %s\n", snd_strerror(ret));
@@ -45,12 +44,12 @@ void* effector_thread()
     }
            
     // 出力を初期化する
-    ret = snd_pcm_open(&h_out, "default", SND_PCM_STREAM_PLAYBACK, 0);
+    ret = snd_pcm_open(&outhandle, "default", SND_PCM_STREAM_PLAYBACK, 0);
     if (ret < 0) {
         fprintf(stderr, "playback open error: %s\n", snd_strerror(ret));
         exit(1);
     }
-    ret = snd_pcm_set_params(h_out, SND_PCM_FORMAT_S32_LE,
+    ret = snd_pcm_set_params(outhandle, SND_PCM_FORMAT_S32_LE,
             SND_PCM_ACCESS_RW_NONINTERLEAVED, CH_NUM, SAMPLING_RATE, 1, 50000);
     if (ret < 0) {
         fprintf(stderr, "playback set error: %s\n", snd_strerror(ret));
@@ -58,15 +57,25 @@ void* effector_thread()
     }
 
     // バッファを初期化する
+    for (i = 0; i < FRAME_NUM; i++) {
+        inbuf_l[i] = 0;
+        inbuf_r[i] = 0;
+        outbuf_l[i] = 0;
+        outbuf_r[i] = 0;
+    }
     for (i = 0; i < DELAY_NUM; i++) {
         sma_buf_l[i] = 0;
         sma_buf_r[i] = 0;
     }
+    pinbuf[0] = inbuf_l;
+    pinbuf[1] = inbuf_r;
+    poutbuf[0] = outbuf_l;
+    poutbuf[1] = outbuf_r;
 
     // 信号の入力、処理、出力をし続ける
     while (finish == 0) {
         // 入力信号を読み込む
-        ret = snd_pcm_readn(h_in, (void **)pinbuf, FRAME_NUM);
+        ret = snd_pcm_readn(inhandle, (void **)pinbuf, FRAME_NUM);
         if (ret == -EPIPE) {
             fprintf(stderr, "capture underrun");
         } else if (ret < 0) {
@@ -100,10 +109,10 @@ void* effector_thread()
         }
 
         // 出力信号を書き込む
-        ret = snd_pcm_writen(h_out, (void **)poutbuf, FRAME_NUM);
+        ret = snd_pcm_writen(outhandle, (void **)poutbuf, FRAME_NUM);
         if (ret == -EPIPE) {
             fprintf(stderr, "playback underrun");
-            ret = snd_pcm_recover(h_out, ret, 0);
+            ret = snd_pcm_recover(outhandle, ret, 0);
             if (ret < 0) {
                 fprintf(stderr, "playback recover error: %s\n",
                         snd_strerror(ret));
@@ -118,12 +127,12 @@ void* effector_thread()
     }
 
     // 入力を閉じる
-    snd_pcm_drain(h_in);
-    snd_pcm_close(h_in);
+    snd_pcm_drain(inhandle);
+    snd_pcm_close(inhandle);
 
     // 出力を閉じる
-    snd_pcm_drain(h_out);
-    snd_pcm_close(h_out);
+    snd_pcm_drain(outhandle);
+    snd_pcm_close(outhandle);
 
     // 終了処理を行う
     finish_effector = 1;
