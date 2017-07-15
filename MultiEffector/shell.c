@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "effector.h"
+#include "effdata.h"
 #include "shell.h"
       
 #define INPUT_LEN 128
@@ -14,71 +15,40 @@ void shell(EFFCMD *effcmd)
     int cmdc;
     char *cmdv[COMMAND_NUM];
     const char *delim = " \t\n";
+    EFFWORD *effword;
+    int effword_num;
     char *p;
     int i;
 
     printf("command: ");
 
-    if (fgets(input, sizeof(input), stdin) == NULL) {
-        effcmd->effstat = DONOTHING;
-        effcmd->efftype = THROUGH;
-        for (i = 0; i < PARAM_NUM; i++) {
-            effcmd->param[i] = 0;
+    // 入力から文字列を取得する
+    if (fgets(input, sizeof(input), stdin) != NULL) {
+        // 文字列を分割する
+        p = input;
+        for (cmdc = 0; cmdc < COMMAND_NUM; cmdc++) {
+            if ((cmdv[cmdc] = strtok(p, delim)) == NULL) {
+                break;
+            }
+            p = NULL;
         }
-        return;
-    }
 
-    p = input;
-    for (cmdc = 0; cmdc < COMMAND_NUM; cmdc++) {
-        if ((cmdv[cmdc] = strtok(p, delim)) == NULL) {
-            break;
-        }
-        p = NULL;
-    }
+        // コマンドを解析する
+        if (cmdc >= 1) {
+            effword = effdata_get_word();
+            effword_num = effdata_get_word_num();
+            for (i = 0; i < effword_num; i++) {
+                if (strcmp(cmdv[0], effword[i].effcmd) == 0) {
+                    effcmd->effstat = effword[i].effstat;
+                    effcmd->efftype = effword[i].efftype;
+                    for (i = 0; i < PARAM_NUM; i++) {
+                        effcmd->param[i] = 0;
+                    }
+                    break;
+                }
+            }
 
-    if (cmdc >= 1) {
-        if (strcmp(cmdv[0], "0") == 0) {
-            effcmd->effstat = STOP;
-            effcmd->efftype = THROUGH;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
-        } else if (strcmp(cmdv[0], "1") == 0) {
-            effcmd->effstat = PLAY;
-            effcmd->efftype = THROUGH;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
-        } else if (strcmp(cmdv[0], "2") == 0) {
-            effcmd->effstat = PLAY;
-            effcmd->efftype = SMA;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
-        } else if (strcmp(cmdv[0], "q") == 0) {
-            effcmd->effstat = EXIT;
-            effcmd->efftype = THROUGH;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
-        } else if (strcmp(cmdv[0], "stop") == 0) {
-            effcmd->effstat = STOP;
-            effcmd->efftype = THROUGH;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
-        } else if (strcmp(cmdv[0], "exit") == 0) {
-            effcmd->effstat = EXIT;
-            effcmd->efftype = THROUGH;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
-        } else if (strcmp(cmdv[0], "help") == 0) {
-            effcmd->effstat = HELP;
-            effcmd->efftype = THROUGH;
-            for (i = 0; i < PARAM_NUM; i++) {
-                effcmd->param[i] = 0;
-            }
+        // コマンドを解析できないので何もしない
         } else {
             effcmd->effstat = DONOTHING;
             effcmd->efftype = THROUGH;
@@ -86,6 +56,8 @@ void shell(EFFCMD *effcmd)
                 effcmd->param[i] = 0;
             }
         }
+
+    // 入力から文字列を取得できないので何もしない
     } else {
         effcmd->effstat = DONOTHING;
         effcmd->efftype = THROUGH;

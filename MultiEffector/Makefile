@@ -15,8 +15,9 @@ TARGET_SREC		= $(TARGET).srec
 ASMS			=
 
 SRCS			=
-SRCS			+= main.c
 SRCS			+= effector.c
+SRCS			+= effdata.c
+SRCS			+= effmng.c
 SRCS			+= shell.c
 SRCS			+= sounddev.c
 SRCS			+= through.c

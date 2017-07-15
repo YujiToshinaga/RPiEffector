@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "effector.h"
+#include "effdata.h"
 #include "through.h"
       
 void through_init(int *param)

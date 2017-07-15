@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "effector.h"
+#include "effdata.h"
 #include "sma.h"
       
 #define DELAY_NUM 16
