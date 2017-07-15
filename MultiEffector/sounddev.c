@@ -5,10 +5,8 @@
 #include <alsa/asoundlib.h>
 
 #include "stddef.h"
+#include "effdata.h"
 #include "sounddev.h"
-
-#define SAMPLING_RATE 96000
-#define CH_NUM 2
 
 static snd_pcm_t *inhandle;
 static snd_pcm_t *outhandle;

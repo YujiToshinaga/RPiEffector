@@ -22,6 +22,7 @@ SRCS			+= shell.c
 SRCS			+= sounddev.c
 SRCS			+= through.c
 SRCS			+= sma.c
+SRCS			+= reverb.c
 
 OBJS			= $(ASMS:.S=.o) $(SRCS:.c=.o)
 DPNS			= $(ASMS:.S=.d) $(SRCS:.c=.d)
