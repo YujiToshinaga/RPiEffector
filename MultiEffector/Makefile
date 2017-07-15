@@ -5,8 +5,7 @@
 ######## Target ########
 TARGET			= effector
 
-#TARGET_AXF		= $(TARGET).axf
-TARGET_AXF		= $(TARGET)
+TARGET_EXE		= $(TARGET)
 TARGET_SYM		= $(TARGET).sym
 TARGET_DUMP		= $(TARGET).dump
 TARGET_BIN		= $(TARGET).bin
@@ -16,7 +15,12 @@ TARGET_SREC		= $(TARGET).srec
 ASMS			=
 
 SRCS			=
+SRCS			+= main.c
 SRCS			+= effector.c
+SRCS			+= shell.c
+SRCS			+= sounddev.c
+SRCS			+= through.c
+SRCS			+= sma.c
 
 OBJS			= $(ASMS:.S=.o) $(SRCS:.c=.o)
 DPNS			= $(ASMS:.S=.d) $(SRCS:.c=.d)
@@ -26,7 +30,8 @@ INCLUDE_DIRS	= .
 SRC_DIRS		= .
 
 ######## Command ########
-PREFIX			= arm-linux-gnueabihf-
+#PREFIX			= arm-linux-gnueabihf-
+PREFIX			=
 
 GCC				= $(PREFIX)gcc
 AR				= $(PREFIX)ar
@@ -37,7 +42,7 @@ OBJDUMP			= $(PREFIX)objdump
 SIZE			= $(PREFIX)size
 
 CFLAGS			=
-CFLAGS			+= $(addprefix -I, $(INCLUDE_DIRS))
+#CFLAGS			+= $(addprefix -I, $(INCLUDE_DIRS))
 CFLAGS			+= -lpthread
 CFLAGS			+= -lasound
 
@@ -62,9 +67,9 @@ vpath %.c	= $(SRC_DIRS)
 # Command
 #-------------------------------------------------------------------------------
 
-all: axf
+all: exe
 
-axf: $(TARGET_AXF)
+exe: $(TARGET_EXE)
 
 sym: $(TARGET_SYM)
 
@@ -75,7 +80,7 @@ bin: $(TARGET_BIN)
 srec: $(TARGET_SREC)
 
 clean:
-	$(RM) $(TARGET_AXF)
+	$(RM) $(TARGET_EXE)
 	$(RM) $(TARGET_SYM)
 	$(RM) $(TARGET_DUMP)
 	$(RM) $(TARGET_BIN)
@@ -106,24 +111,24 @@ clean:
 .c.S:
 	$(GCC) -S $(CFLAGS) $<
 
-######## Create AXF and map file ########
-$(TARGET_AXF): $(OBJS)
-	$(GCC) $(CFLAGS) $(LDFLAGS) -o $(TARGET_AXF) $(OBJS)
+######## Create execution file ########
+$(TARGET_EXE): $(OBJS)
+	$(GCC) $(CFLAGS) $(LDFLAGS) -o $(TARGET_EXE) $(OBJS)
 
 ######## Create symbol file ########
-$(TARGET_SYM): $(TARGET_AXF)
+$(TARGET_SYM): $(TARGET_EXE)
 	$(NM) $^ > $@
 
 ######## Create dump file ########
-$(TARGET_DUMP): $(TARGET_AXF)
+$(TARGET_DUMP): $(TARGET_EXE)
 	$(OBJDUMP) -a -h -D -z $^ > $@
 
 ######## Create binary ########
-$(TARGET_BIN): $(TARGET_AXF)
+$(TARGET_BIN): $(TARGET_EXE)
 	$(OBJCOPY) -O binary $^ $@
 
 ######## Create S-record ########
-$(TARGET_SREC): $(TARGET_AXF)
+$(TARGET_SREC): $(TARGET_EXE)
 	$(OBJCOPY) -O srec $^ $@
 
 ######## Create Intel HEX ########
