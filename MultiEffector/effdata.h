@@ -1,6 +1,8 @@
 #ifndef __EFFDATA_H__
 #define __EFFDATA_H__
 
+#define SAMPLING_RATE 96000
+#define CH_NUM 2
 #define FRAME_NUM 128
 #define PARAM_NUM 10
 
@@ -12,10 +14,12 @@ typedef enum effector_status {
     EXIT,
 } EFFSTAT;
 
-#define EFFTYPE_NUM 2
+//#define EFFTYPE_NUM 3
 typedef enum effector_type {
     THROUGH,
     SMA,
+    REVERB,
+    EFFTYPE_NUM
 } EFFTYPE;
 
 typedef struct effector_command {
