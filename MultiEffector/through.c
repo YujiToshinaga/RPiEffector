@@ -5,7 +5,7 @@
 #include "effector.h"
 #include "through.h"
       
-void through_init(void)
+void through_init(int *param)
 {
 }
 

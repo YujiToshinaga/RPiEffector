@@ -9,7 +9,7 @@
 
 static int *sma_buf[2];
 
-void sma_init(void)
+void sma_init(int *param)
 {
     int i;
 
